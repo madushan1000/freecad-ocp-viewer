@@ -40,7 +40,7 @@ class ReloadWorker(QObject):
         self.load_file()
 
     def load_file(self):
-        print(self.file_watcher.files())
+        #print(self.file_watcher.files())
         self.clear_local_modules()
         self.file_watcher.addPath(str(self.main_file))
         old_modules = self.get_module_attrs(sys.modules)
@@ -144,11 +144,7 @@ class FreeCADOcpViewer(QApplication):
         doc = self.ensure_document()
         parts = doc.findObjects("Part::Feature")
         for part in parts:
-            print("part1:", str(part.Name))
-            print("parts:", self.part_names)
             if getattr(part, "ManagedBy", None) == "FreeCADOcpViewer" and part.Name not in self.part_names :
-                print(self.part_names)
-                print("part2:", str(part.Name))
                 doc.removeObject(part.Name)
         self.part_names.clear()
         doc.recompute()

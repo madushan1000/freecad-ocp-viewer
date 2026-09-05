@@ -1,6 +1,7 @@
 # Most of the code in this file are taken from https://github.com/bernhard-42/vscode-ocp-cad-viewer, https://github.com/CadQuery/cadquery, and https://github.com/CadQuery/CQ-editor
 # So this specific file is licensed under Apache-2.0 license
 
+from typing import Iterable
 from io import BytesIO
 from typing_extensions import TypeIs
 
@@ -40,7 +41,8 @@ def get_brep(object):
 
     cadquery_object = unwrap_cadquery_object(object)
     if cadquery_object != None:
-        return
+        cadquery_object.exportBrep(brep_stream)
+        return brep_stream
 
     build123d_object = unwrap_build123d_object(object)
     if build123d_object != None:
@@ -52,15 +54,19 @@ def get_brep(object):
 
 def unwrap_cadquery_object(obj):
 
-    if (
-        is_cadquery(obj) 
-        or is_cadquery_shape(obj) 
-        or is_cadquery_assembly(obj) 
-        or is_cadquery_massembly(obj) 
+    if is_cadquery_shape(obj):
+        return obj
+    elif is_cadquery_assembly(obj):
+        return obj.toCompound()
+    elif is_cadquery(obj):
+        return obj.val()
+    elif (
+        is_cadquery_massembly(obj)
         or is_cadquery_sketch(obj)
         or is_cadquery_empty_workplane(obj)
         or is_vector(obj)
         or is_massembly(obj)):
+        print(dir(obj))
         return obj
     return None
 
