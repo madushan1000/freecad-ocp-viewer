@@ -1,6 +1,6 @@
 # FreeCAD OCP Viewer
 
-A small tool to visualize [CadQuery](https://github.com/cadquery/cadquery) or [buld123d](https://github.com/gumyr/build123d) projects in FreeCAD.
+A small tool to visualize [CadQuery](https://github.com/cadquery/cadquery) or [buld123d](https://github.com/gumyr/build123d) projects in FreeCAD. This is not a FreeCAD workbench.
 
 ## Features
 
