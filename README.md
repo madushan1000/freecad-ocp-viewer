@@ -6,6 +6,10 @@ A small tool to visualize [CadQuery](https://github.com/cadquery/cadquery) or [b
 
 - Uses FreeCAD as the viewer.
 - Automatic project hot reloading.
+  
+## Screencast
+
+[freecad-ocp-viewer.webm](https://github.com/user-attachments/assets/841731d2-1192-4a77-98ea-c4c764f4b0e2)
 
 ## How it works
 
