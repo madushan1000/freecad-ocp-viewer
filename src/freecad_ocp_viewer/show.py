@@ -66,7 +66,6 @@ def unwrap_cadquery_object(obj):
         or is_cadquery_empty_workplane(obj)
         or is_vector(obj)
         or is_massembly(obj)):
-        print(dir(obj))
         return obj
     return None
 

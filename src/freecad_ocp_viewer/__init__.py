@@ -40,5 +40,6 @@ def main():
 
         raise e
     app = FreeCADOcpViewer(main_file, args.argv)
+    app.setApplicationName("FreeCADOcpViewer")
     signal.signal(signal.SIGINT, signal.SIG_DFL)
     return app.exec()

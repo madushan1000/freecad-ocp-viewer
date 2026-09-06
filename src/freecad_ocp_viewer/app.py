@@ -40,7 +40,6 @@ class ReloadWorker(QObject):
         self.load_file()
 
     def load_file(self):
-        #print(self.file_watcher.files())
         self.clear_local_modules()
         self.file_watcher.addPath(str(self.main_file))
         old_modules = self.get_module_attrs(sys.modules)
@@ -84,49 +83,58 @@ class ReloadWorker(QObject):
                     del sys.modules[module_name]
 
 
+
 class FreeCADOcpViewer(QApplication):
+
     def __init__(self, main_file, argv):
         super().__init__(argv)
 
         QDir.addSearchPath('qss', FreeCAD.ConfigGet('AppHomePath') + '/share/Gui/Stylesheets')
         FreeCADGui.showMainWindow()
 
+        self.main_file = main_file
         self.project_name = Path().cwd().name
         self.part_names = set()
         self.worker_thread = QThread()
         self.reload_worker = ReloadWorker()
         self.reload_worker.moveToThread(self.worker_thread)
+        FreeCADGui.addDocumentObserver(self)
         self.worker_thread.start()
         self.worker_thread.finished.connect(self.reload_worker.deleteLater)
         FreeCADGui.getMainWindow().mainWindowClosed.connect(self.worker_thread.quit)
-        QMetaObject.invokeMethod(
-            self.reload_worker, 
-            "init_worker", 
-            Qt.ConnectionType.QueuedConnection, Q_ARG(str, str(main_file)))
         self.reload_worker.send_shape.connect(self.create_shape)
         self.reload_worker.done_seding.connect(self.handle_cleanup)
+        self.doc = FreeCAD.newDocument(self.project_name)
+
+
+    def slotCreatedDocument(self, doc):
+        if doc.Document.Name == self.project_name:
+            QMetaObject.invokeMethod(
+                self.reload_worker,
+                "init_worker",
+                Qt.ConnectionType.QueuedConnection, Q_ARG(str, str(self.main_file)))
+            FreeCADGui.removeDocumentObserver(self)
 
     def create_shape(self, breps):
-        doc = self.ensure_document()
         for item in breps:
-            self.ensure_part(doc, item)
-            doc.recompute()
+            self.ensure_part(item)
+            self.doc.recompute()
 
     
-    def ensure_part(self, doc, item):
+    def ensure_part(self, item):
         self.part_names.add(item['hash'])
-        parts = doc.findObjects('Part::Feature', Name = item['hash'])
+        parts = self.doc.findObjects('Part::Feature', Name = item['hash'])
         if len(parts) > 0:
             parts[0].Label = item['label']
             return
-        parts = doc.findObjects('Part::Feature', Label = item['label'])
+        parts = self.doc.findObjects('Part::Feature', Label = item['label'])
         if len(parts) > 0:
             for part in parts:
                 if part.Label == item['label']:
-                    doc.removeObject(part.Name)
+                    self.doc.removeObject(part.Name)
 
         part_shape = PartShape()
-        obj = doc.addObject("Part::Feature", item['hash'])
+        obj = self.doc.addObject("Part::Feature", item['hash'])
         obj.Label = item['label']
         obj.addProperty('App::PropertyString', 'ManagedBy')
         obj.ManagedBy = "FreeCADOcpViewer"
@@ -134,18 +142,11 @@ class FreeCADOcpViewer(QApplication):
         obj.Shape = part_shape
         return  part_shape
 
-    def ensure_document(self):
-        doc = FreeCAD.listDocuments().get(self.project_name)
-        if doc == None:
-            doc = FreeCAD.newDocument(self.project_name)
-        return doc
-
     def handle_cleanup(self):
-        doc = self.ensure_document()
-        parts = doc.findObjects("Part::Feature")
+        parts = self.doc.findObjects("Part::Feature")
         for part in parts:
             if getattr(part, "ManagedBy", None) == "FreeCADOcpViewer" and part.Name not in self.part_names :
-                doc.removeObject(part.Name)
+                self.doc.removeObject(part.Name)
         self.part_names.clear()
-        doc.recompute()
+        self.doc.recompute()
 
